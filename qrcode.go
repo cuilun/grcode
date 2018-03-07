@@ -14,6 +14,20 @@ import (
 
 type RawData string
 
+func GetDataFromImage(img image.Image) (results []string, err error) {
+	scanner := NewScanner()
+	defer scanner.Close()
+	scanner.SetConfig(0, C.ZBAR_CFG_ENABLE, 1)
+	zImg := NewZbarImage(img)
+	defer zImg.Close()
+	scanner.Scan(zImg)
+	symbol := zImg.GetSymbol()
+	for ; symbol != nil; symbol = symbol.Next() {
+		results = append(results, symbol.Data())
+	}
+	return results, nil
+}
+
 func GetDataFromFile(imagePath string) (results []string, err error) {
 	// TODO: read via libjpeg, libpng instead of Go
 	//filePath := C.CString(imagePath)
@@ -28,15 +42,6 @@ func GetDataFromFile(imagePath string) (results []string, err error) {
 		log.Printf("decode file error: %v", err)
 		return results, err
 	}
-	scanner := NewScanner()
-	defer scanner.Close()
-	scanner.SetConfig(0, C.ZBAR_CFG_ENABLE, 1)
-	zImg := NewZbarImage(m)
-	defer zImg.Close()
-	scanner.Scan(zImg)
-	symbol := zImg.GetSymbol()
-	for ; symbol != nil; symbol = symbol.Next() {
-		results = append(results, symbol.Data())
-	}
-	return results, nil
+
+	return GetDataFromImage(m)
 }
